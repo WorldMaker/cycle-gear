@@ -32,9 +32,14 @@ export function pedal(transmission: Transmission, {
     defaultFilter = (model: any) => true,
     sinkMap = new Map(),
 }: PedalOptions = {}) {
+    let { intent: defaultIntent, model: defaultModel } = defaultGear
+    defaultIntent = defaultIntent || ((sources: any) => ({}))
+    defaultModel = defaultModel || ((actions: any) => Rx.Observable.just({}).delay(300)) // TODO: Why does this delay work?
+
     // Fully expand tooth defaults to avoid doing all the tests below every time
     const teeth = Object.keys(defaultGear.teeth)
     let toothDefaults: { [name: string]: GearTooth<any> } = {}
+    let emptyTeeth = teeth.reduce((accum, cur) => Object.assign(accum, { [cur]: Rx.Observable.never() }), {})
     for (let tooth of teeth) {
         let defGearTooth = defaultGear.teeth[tooth]
         if (defGearTooth instanceof Function) {
@@ -72,21 +77,20 @@ export function pedal(transmission: Transmission, {
             gear$ = <Rx.Observable<Gear<any, any>>>transmission
         }
 
-        sources = Object.assign(sources, { gear$ })
-
         let spin$ = gear$.map(gear => {
-            let actions = gear.intent ? gear.intent(sources) : defaultGear.intent(sources)
-            let state$ = (gear.model ? gear.model(actions) : defaultGear.model(sources)).share()
+            let actions = gear.intent ? gear.intent(sources) : defaultIntent(sources)
+            let state$ = (gear.model ? gear.model(actions) : defaultModel(sources)).share()
             let views = teeth.reduce((accum, tooth) => Object.assign(accum, {
                 [tooth]: state$.filter(toothFilter(tooth, gear.teeth[tooth])).map(toothView(tooth, gear.teeth[tooth])),
             }), {})
+            
             return views
-        }).shareValue({})
+        }).shareValue(emptyTeeth)
 
         let sinks = teeth.reduce((accum, tooth) => Object.assign(accum, {
-            [sinkMap.has(tooth) ? sinkMap.get(tooth) : tooth]: spin$.flatMapLatest((views: any) => views[tooth] || Rx.Observable.never()),
+            [sinkMap.has(tooth) ? sinkMap.get(tooth) : tooth]: spin$.flatMapLatest((views: any) => views[tooth]),
         }), {})
-        
+
         return sinks
     }
 }
