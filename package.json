@@ -3,12 +3,17 @@
   "version": "1.0.0",
   "description": "Main function factory for CycleJS",
   "main": "dist/index.js",
+  "jsnext": {
+    "main": "dist-es2015/index.js"
+  },
   "directories": {
     "doc": "docs",
     "lib": "dist"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "compile": "tsc -p tsconfig.es2015.json && tsc -p tsconfig.json",
+    "prepublish": "npm run compile"
   },
   "repository": {
     "type": "git",

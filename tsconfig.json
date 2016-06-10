@@ -1,11 +1,14 @@
 {
     "compilerOptions": {
         "module": "commonjs",
-        "target": "es2015",
+        "target": "es5",
+        "noLib": true,
         "declaration": true,
         "outDir": "./dist/"
     },
-    "exclude": [
-        "node_modules"
+    "files": [
+        "index.ts",
+        "node_modules/typescript/lib/lib.es6.d.ts",
+        "typings/index.d.ts"
     ]
 }
