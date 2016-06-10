@@ -1,4 +1,6 @@
 {
+  "name": "cycle-gear",
+  "main": "dist/index.d.ts",
   "globalDependencies": {
     "rx": "registry:dt/rx#0.0.0+20160317120654",
     "rx-lite": "registry:dt/rx-lite#0.0.0+20160526133610",
