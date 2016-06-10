@@ -1,0 +1,26 @@
+{
+  "name": "cycle-gear",
+  "version": "1.0.0",
+  "description": "Main function factory for CycleJS",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "dist"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WorldMaker/cycle-gear.git"
+  },
+  "author": "Max Battcher <me@worldmaker.net>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/WorldMaker/cycle-gear/issues"
+  },
+  "homepage": "https://github.com/WorldMaker/cycle-gear#readme",
+  "devDependencies": {
+    "typescript": "^1.8.10"
+  }
+}

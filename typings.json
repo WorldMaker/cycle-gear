@@ -1,0 +1,22 @@
+{
+  "globalDependencies": {
+    "rx": "registry:dt/rx#0.0.0+20160317120654",
+    "rx-lite": "registry:dt/rx-lite#0.0.0+20160526133610",
+    "rx.aggregates": "registry:dt/rx.aggregates#2.2.28+20160317120654",
+    "rx.all": "registry:dt/rx.all#2.2.28+20160316155526",
+    "rx.async": "registry:dt/rx.async#2.2.28+20160317120654",
+    "rx.async-lite": "registry:dt/rx.async-lite#0.0.0+20160316171810",
+    "rx.backpressure": "registry:dt/rx.backpressure#0.0.0+20160316155526",
+    "rx.backpressure-lite": "registry:dt/rx.backpressure-lite#0.0.0+20160316171810",
+    "rx.binding": "registry:dt/rx.binding#2.2.28+20160316155526",
+    "rx.binding-lite": "registry:dt/rx.binding-lite#0.0.0+20160316171810",
+    "rx.coincidence": "registry:dt/rx.coincidence#2.2.28+20160317120654",
+    "rx.coincidence-lite": "registry:dt/rx.coincidence-lite#0.0.0+20160412135432",
+    "rx.experimental": "registry:dt/rx.experimental#2.2.28+20160317120654",
+    "rx.joinpatterns": "registry:dt/rx.joinpatterns#2.2.28+20160317120654",
+    "rx.testing": "registry:dt/rx.testing#2.2.28+20160317120654",
+    "rx.time": "registry:dt/rx.time#2.2.28+20160317120654",
+    "rx.time-lite": "registry:dt/rx.time-lite#0.0.0+20160316171810",
+    "rx.virtualtime": "registry:dt/rx.virtualtime#2.2.28+20160317120654"
+  }
+}
