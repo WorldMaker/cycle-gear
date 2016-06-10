@@ -2,7 +2,7 @@
   "name": "cycle-gear",
   "version": "1.0.0",
   "description": "Main function factory for CycleJS",
-  "main": "index.js",
+  "main": "dist/index.js",
   "directories": {
     "doc": "docs",
     "lib": "dist"
