@@ -1,6 +1,6 @@
 {
   "name": "cycle-gear",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Main function factory for CycleJS",
   "main": "dist/index.js",
   "jsnext": {
