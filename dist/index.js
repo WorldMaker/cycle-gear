@@ -50,7 +50,7 @@ function pedal(transmission, _a) {
         }
         var spin$ = gear$.map(function (gear) {
             var actions = gear.intent ? gear.intent(sources) : defaultIntent(sources);
-            var state$ = (gear.model ? gear.model(actions) : defaultModel(sources)).share();
+            var state$ = (gear.model ? gear.model(actions) : defaultModel(sources)).shareReplay(1);
             var views = teeth.reduce(function (accum, tooth) { return Object.assign(accum, (_a = {},
                 _a[tooth] = state$.filter(toothFilter(tooth, gear.teeth[tooth])).map(toothView(tooth, gear.teeth[tooth])),
                 _a

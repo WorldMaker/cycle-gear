@@ -47,7 +47,7 @@ export function pedal(transmission, { defaultGear = { intent: (sources) => ({}),
         }
         let spin$ = gear$.map(gear => {
             let actions = gear.intent ? gear.intent(sources) : defaultIntent(sources);
-            let state$ = (gear.model ? gear.model(actions) : defaultModel(sources)).share();
+            let state$ = (gear.model ? gear.model(actions) : defaultModel(sources)).shareReplay(1);
             let views = teeth.reduce((accum, tooth) => Object.assign(accum, {
                 [tooth]: state$.filter(toothFilter(tooth, gear.teeth[tooth])).map(toothView(tooth, gear.teeth[tooth])),
             }), {});
