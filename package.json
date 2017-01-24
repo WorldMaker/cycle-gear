@@ -33,6 +33,7 @@
   },
   "homepage": "https://github.com/WorldMaker/cycle-gear#readme",
   "devDependencies": {
-    "typescript": "^1.8.10"
+    "tslint-config-standard": "^3.0.0",
+    "typescript": "^2.1.5"
   }
 }

@@ -14,6 +14,7 @@ export interface GearTeeth<TModel> {
 }
 
 export interface Gear<TActions, TModel> {
+    catch?: (error: any) => Rx.Observable<any>
     intent?: (sources: any) => TActions
     model?: (actions: TActions) => Rx.Observable<TModel>
     teeth?: GearTeeth<TModel>
@@ -24,13 +25,15 @@ export type Transmission = ((sources: any) => Rx.Observable<Gear<any, any>>) | R
 export interface PedalOptions {
     defaultGear?: Gear<any, any>
     defaultFilter?: (model: any) => boolean
+    defaultCatch?: (error: any) => Rx.Observable<any>
     sinkMap?: Map<string, string>
 }
 
 export function pedal(transmission: Transmission, {
-    defaultGear = { intent: (sources: any) => ({}), model: (actions: any) => Rx.Observable.just({}), teeth: <GearTeeth<any>>{} },
+    defaultGear = { intent: (sources: any) => ({}), model: (actions: any) => Rx.Observable.just({}), teeth: {} as GearTeeth<any> },
     defaultFilter = (model: any) => true,
-    sinkMap = new Map(),
+    defaultCatch = (error: any) => Rx.Observable.throw(error),
+    sinkMap = new Map()
 }: PedalOptions = {}) {
     let { intent: defaultIntent, model: defaultModel } = defaultGear
     defaultIntent = defaultIntent || ((sources: any) => ({}))
@@ -38,34 +41,34 @@ export function pedal(transmission: Transmission, {
 
     // Fully expand tooth defaults to avoid doing all the tests below every time
     const teeth = Object.keys(defaultGear.teeth)
-    let toothDefaults: { [name: string]: GearTooth<any> } = {}
-    let emptyTeeth = teeth.reduce((accum, cur) => Object.assign(accum, { [cur]: Rx.Observable.never() }), {})
+    const toothDefaults: { [name: string]: GearTooth<any> } = {}
+    const emptyTeeth = teeth.reduce((accum, cur) => Object.assign(accum, { [cur]: Rx.Observable.never() }), {})
     for (let tooth of teeth) {
-        let defGearTooth = defaultGear.teeth[tooth]
+        const defGearTooth = defaultGear.teeth[tooth]
         if (defGearTooth instanceof Function) {
             toothDefaults[tooth] = { filter: defaultFilter, view: defGearTooth }
         } else {
-            toothDefaults[tooth] = { filter: (<GearTooth<any>>defGearTooth).filter || defaultFilter, view: (<GearTooth<any>>defGearTooth).view }
+            toothDefaults[tooth] = { filter: (defGearTooth as GearTooth<any>).filter || defaultFilter, view: (defGearTooth as GearTooth<any>).view }
         }
     }
 
     // Filter helper
-    let toothFilter = (name: string, tooth: GearTooth<any> | GearView<any>) => {
+    const toothFilter = (name: string, tooth: GearTooth<any> | GearView<any>) => {
         if (!tooth || tooth instanceof Function) {
             return toothDefaults[name].filter
         } else {
-            return (<GearTooth<any>>tooth).filter || toothDefaults[name].filter
+            return (tooth as GearTooth<any>).filter || toothDefaults[name].filter
         }
     }
 
     // View helper
-    let toothView = (name: string, tooth: GearTooth<any> | GearView<any>) => {
+    const toothView = (name: string, tooth: GearTooth<any> | GearView<any>) => {
         if (!tooth) {
             return toothDefaults[name].view
         } else if (tooth instanceof Function) {
             return tooth
         } else {
-            return (<GearTooth<any>>tooth).view
+            return (tooth as GearTooth<any>).view
         }
     }
 
@@ -74,22 +77,26 @@ export function pedal(transmission: Transmission, {
         if (transmission instanceof Function) {
             gear$ = transmission(sources)
         } else {
-            gear$ = <Rx.Observable<Gear<any, any>>>transmission
+            gear$ = transmission as Rx.Observable<Gear<any, any>>
         }
 
-        let spin$ = gear$.map(gear => {
-            let actions = gear.intent ? gear.intent(sources) : defaultIntent(sources)
-            let state$ = (gear.model ? gear.model(actions) : defaultModel(sources)).shareReplay(1)
-            let views = teeth.reduce((accum, tooth) => Object.assign(accum, {
-                [tooth]: state$.filter(toothFilter(tooth, gear.teeth[tooth])).map(toothView(tooth, gear.teeth[tooth])),
-            }), {})
-            
+        const spin$ = gear$.map(gear => {
+            const actions = gear.intent ? gear.intent(sources) : defaultIntent(sources)
+            const state$ = (gear.model ? gear.model(actions) : defaultModel(sources))
+                .catch(gear.catch ? gear.catch : defaultCatch)
+                .shareReplay(1)
+            const views = teeth.reduce((accum, tooth) => Object.assign(accum, {
+                [tooth]: state$.filter(toothFilter(tooth, gear.teeth[tooth])).map(toothView(tooth, gear.teeth[tooth]))
+            }),
+                                       {})
+
             return views
         }).shareValue(emptyTeeth)
 
-        let sinks = teeth.reduce((accum, tooth) => Object.assign(accum, {
-            [sinkMap.has(tooth) ? sinkMap.get(tooth) : tooth]: spin$.flatMapLatest((views: any) => views[tooth]),
-        }), {})
+        const sinks = teeth.reduce((accum, tooth) => Object.assign(accum, {
+            [sinkMap.has(tooth) ? sinkMap.get(tooth) : tooth]: spin$.flatMapLatest((views: any) => views[tooth])
+        }),
+                                   {})
 
         return sinks
     }

@@ -10,6 +10,7 @@ export interface GearTeeth<TModel> {
     [name: string]: GearTooth<TModel> | GearView<TModel>;
 }
 export interface Gear<TActions, TModel> {
+    catch?: (error: any) => Rx.Observable<any>;
     intent?: (sources: any) => TActions;
     model?: (actions: TActions) => Rx.Observable<TModel>;
     teeth?: GearTeeth<TModel>;
@@ -18,6 +19,7 @@ export declare type Transmission = ((sources: any) => Rx.Observable<Gear<any, an
 export interface PedalOptions {
     defaultGear?: Gear<any, any>;
     defaultFilter?: (model: any) => boolean;
+    defaultCatch?: (error: any) => Rx.Observable<any>;
     sinkMap?: Map<string, string>;
 }
-export declare function pedal(transmission: Transmission, {defaultGear, defaultFilter, sinkMap}?: PedalOptions): (sources: any) => {};
+export declare function pedal(transmission: Transmission, {defaultGear, defaultFilter, defaultCatch, sinkMap}?: PedalOptions): (sources: any) => {};
