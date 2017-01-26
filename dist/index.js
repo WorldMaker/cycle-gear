@@ -1,8 +1,9 @@
 "use strict";
 var Rx = require("rx");
 function pedal(transmission, _a) {
-    var _b = _a === void 0 ? {} : _a, _c = _b.defaultGear, defaultGear = _c === void 0 ? { intent: function (sources) { return ({}); }, model: function (actions) { return Rx.Observable.just({}); }, teeth: {} } : _c, _d = _b.defaultFilter, defaultFilter = _d === void 0 ? function (model) { return true; } : _d, _e = _b.defaultCatch, defaultCatch = _e === void 0 ? function (error) { return Rx.Observable.throw(error); } : _e, _f = _b.sinkMap, sinkMap = _f === void 0 ? new Map() : _f;
-    var defaultIntent = defaultGear.intent, defaultModel = defaultGear.model;
+    var _b = _a === void 0 ? {} : _a, _c = _b.defaultGear, defaultGear = _c === void 0 ? { intent: function (sources) { return ({}); }, model: function (actions) { return Rx.Observable.just({}); }, teeth: {} } : _c, _d = _b.defaultFilter, defaultFilter = _d === void 0 ? function (model) { return true; } : _d, _e = _b.sinkMap, sinkMap = _e === void 0 ? new Map() : _e;
+    var defaultCatch = defaultGear.catch, defaultIntent = defaultGear.intent, defaultModel = defaultGear.model;
+    defaultCatch = defaultCatch || (function (error) { return Rx.Observable.throw(error); });
     defaultIntent = defaultIntent || (function (sources) { return ({}); });
     defaultModel = defaultModel || (function (actions) { return Rx.Observable.just({}).delay(300); }); // TODO: Why does this delay work?
     // Fully expand tooth defaults to avoid doing all the tests below every time

@@ -25,17 +25,16 @@ export type Transmission = ((sources: any) => Rx.Observable<Gear<any, any>>) | R
 export interface PedalOptions {
     defaultGear?: Gear<any, any>
     defaultFilter?: (model: any) => boolean
-    defaultCatch?: (error: any) => Rx.Observable<any>
     sinkMap?: Map<string, string>
 }
 
 export function pedal(transmission: Transmission, {
     defaultGear = { intent: (sources: any) => ({}), model: (actions: any) => Rx.Observable.just({}), teeth: {} as GearTeeth<any> },
     defaultFilter = (model: any) => true,
-    defaultCatch = (error: any) => Rx.Observable.throw(error),
     sinkMap = new Map()
 }: PedalOptions = {}) {
-    let { intent: defaultIntent, model: defaultModel } = defaultGear
+    let { catch: defaultCatch, intent: defaultIntent, model: defaultModel } = defaultGear
+    defaultCatch = defaultCatch || ((error: any) => Rx.Observable.throw(error))
     defaultIntent = defaultIntent || ((sources: any) => ({}))
     defaultModel = defaultModel || ((actions: any) => Rx.Observable.just({}).delay(300)) // TODO: Why does this delay work?
 

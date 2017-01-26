@@ -1,6 +1,7 @@
 import * as Rx from 'rx';
-export function pedal(transmission, { defaultGear = { intent: (sources) => ({}), model: (actions) => Rx.Observable.just({}), teeth: {} }, defaultFilter = (model) => true, defaultCatch = (error) => Rx.Observable.throw(error), sinkMap = new Map() } = {}) {
-    let { intent: defaultIntent, model: defaultModel } = defaultGear;
+export function pedal(transmission, { defaultGear = { intent: (sources) => ({}), model: (actions) => Rx.Observable.just({}), teeth: {} }, defaultFilter = (model) => true, sinkMap = new Map() } = {}) {
+    let { catch: defaultCatch, intent: defaultIntent, model: defaultModel } = defaultGear;
+    defaultCatch = defaultCatch || ((error) => Rx.Observable.throw(error));
     defaultIntent = defaultIntent || ((sources) => ({}));
     defaultModel = defaultModel || ((actions) => Rx.Observable.just({}).delay(300)); // TODO: Why does this delay work?
     // Fully expand tooth defaults to avoid doing all the tests below every time
