@@ -81,7 +81,7 @@ export function pedal(transmission: Transmission, {
 
         const spin$ = gear$.map(gear => {
             const actions = gear.intent ? gear.intent(sources) : defaultIntent(sources)
-            const state$ = (gear.model ? gear.model(actions) : defaultModel(sources))
+            const state$ = (gear.model ? gear.model(actions) : defaultModel(actions))
                 .catch(gear.catch ? gear.catch : defaultCatch)
                 .shareReplay(1)
             const views = teeth.reduce((accum, tooth) => Object.assign(accum, {
