@@ -29,6 +29,12 @@ model states.
 A `tooth` produces output to a gear's sinks by `filter`ing the gear's model states and
 presenting them through a `view`.
 
+The `catch` will handle the gear's `model` errors. While this could be manually
+done for each gear model, as a top level part of a gear it encourages the ability
+to handle errors systematically, such as how each `tooth` might deal with it. (It
+also allows for a `catch` to be defaulted across a `transmission`, helping avoid
+issues with a "stuck" `transmission`.)
+
 ## `pedal`
 
 `pedal` is a main factory function for the `Gear` pattern. It takes a `transmission` of
@@ -38,4 +44,4 @@ builds a Cycle main to wire the gears up to Cycle sources and sinks.
 A `transmission` is an observable of gears or a factory from Cycle sources to an observable
 of gears. At the top level of an application might be a `transmission` defined by a history
 router such as [@cycle/history](https://github.com/cyclejs/history), and at lower levels a
-`transmission` might be some other sort of user-action dependent state machine.  
+`transmission` might be some other sort of user-action dependent state machine.
