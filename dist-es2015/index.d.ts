@@ -10,7 +10,7 @@ export interface GearTeeth<TModel> {
     [name: string]: GearTooth<TModel> | GearView<TModel>;
 }
 export interface Gear<TActions, TModel> {
-    catch?: (error: any) => Rx.Observable<any>;
+    catch?: (error: any, actions: TActions) => Rx.Observable<any>;
     intent?: (sources: any) => TActions;
     model?: (actions: TActions) => Rx.Observable<TModel>;
     teeth?: GearTeeth<TModel>;

@@ -55,7 +55,7 @@ function pedal(transmission, _a) {
         var spin$ = gear$.map(function (gear) {
             var actions = gear.intent ? gear.intent(sources) : defaultIntent(sources);
             var state$ = (gear.model ? gear.model(actions) : defaultModel(actions))
-                .catch(gear.catch ? gear.catch : defaultCatch)
+                .catch(function (err) { return gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions); })
                 .shareReplay(1);
             var views = teeth.reduce(function (accum, tooth) {
                 return Object.assign(accum, (_a = {},

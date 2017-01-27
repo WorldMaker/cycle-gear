@@ -14,7 +14,7 @@ export interface GearTeeth<TModel> {
 }
 
 export interface Gear<TActions, TModel> {
-    catch?: (error: any) => Rx.Observable<any>
+    catch?: (error: any, actions: TActions) => Rx.Observable<any>
     intent?: (sources: any) => TActions
     model?: (actions: TActions) => Rx.Observable<TModel>
     teeth?: GearTeeth<TModel>
@@ -82,7 +82,7 @@ export function pedal(transmission: Transmission, {
         const spin$ = gear$.map(gear => {
             const actions = gear.intent ? gear.intent(sources) : defaultIntent(sources)
             const state$ = (gear.model ? gear.model(actions) : defaultModel(actions))
-                .catch(gear.catch ? gear.catch : defaultCatch)
+                .catch((err: any) => gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions))
                 .shareReplay(1)
             const views = teeth.reduce((accum, tooth) => Object.assign(accum, {
                 [tooth]: state$.filter(toothFilter(tooth, gear.teeth[tooth])).map(toothView(tooth, gear.teeth[tooth]))
