@@ -2,11 +2,11 @@
     "compilerOptions": {
         "module": "es2015",
         "target": "es2015",
+        "moduleResolution": "node",
         "declaration": true,
         "outDir": "./dist-es2015/"
     },
     "files": [
-        "index.ts",
-        "typings/index.d.ts"
+        "index.ts"
     ]
 }
