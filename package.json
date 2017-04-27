@@ -20,7 +20,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "compile": "tsc -p tsconfig.es2015.json && tsc -p tsconfig.json",
-    "prepublish": "npm run compile"
+    "version": "npm run compile"
   },
   "repository": {
     "type": "git",
@@ -35,5 +35,9 @@
   "devDependencies": {
     "tslint-config-standard": "^3.0.0",
     "typescript": "^2.1.5"
+  },
+  "dependencies": {
+    "@cycle/run": "^3.1.0",
+    "xstream": "^10.6.0"
   }
 }
