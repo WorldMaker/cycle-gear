@@ -1,5 +1,5 @@
 import { adapt } from '@cycle/run/lib/adapt'
-import xs, { Stream } from 'xstream'
+import xs, { Stream, Observable } from 'xstream'
 
 export interface GearView<TModel> {
     (model: TModel): any
@@ -15,13 +15,13 @@ export interface GearTeeth<TModel> {
 }
 
 export interface Gear<TActions, TModel> {
-    catch?: (error: any, actions: TActions) => Stream<any>
+    catch?: (error: any, actions: TActions) => Observable<any>
     intent?: (sources: any) => TActions
-    model?: (actions: TActions) => Stream<TModel>
+    model?: (actions: TActions) => Observable<TModel>
     teeth?: GearTeeth<TModel>
 }
 
-export type Transmission = ((sources: any) => Stream<Gear<any, any>>) | Stream<Gear<any, any>>
+export type Transmission = ((sources: any) => Observable<Gear<any, any>>) | Observable<Gear<any, any>>
 
 export interface PedalOptions {
     defaultGear?: Gear<any, any>
@@ -73,25 +73,26 @@ export function pedal(transmission: Transmission, {
     }
 
     return (sources: any) => {
-        let gear: Stream<Gear<any, any>>
+        let gear: Observable<Gear<any, any>>
         if (transmission instanceof Function) {
             gear = transmission(sources)
         } else {
             gear = transmission
         }
 
-        const spin = gear.map(gear => {
-            const actions = gear.intent ? gear.intent(sources) : defaultIntent(sources)
-            const state = (gear.model ? gear.model(actions) : defaultModel(actions))
-                .replaceError((err: any) => gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions))
-                .remember()
-            const views = teeth.reduce((accum, tooth) => Object.assign(accum, {
-                [tooth]: state.filter(toothFilter(tooth, gear.teeth[tooth])).map(toothView(tooth, gear.teeth[tooth]))
-            }),
-                                       {})
+        const spin = xs.fromObservable<Gear<any, any>>(gear)
+            .map(gear => {
+                const actions = gear.intent ? gear.intent(sources) : defaultIntent(sources)
+                const state = xs.fromObservable(gear.model ? gear.model(actions) : defaultModel(actions))
+                    .replaceError((err: any) => xs.fromObservable(gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions)))
+                    .remember()
+                const views = teeth.reduce((accum, tooth) => Object.assign(accum, {
+                    [tooth]: state.filter(toothFilter(tooth, gear.teeth[tooth])).map(toothView(tooth, gear.teeth[tooth]))
+                }),
+                                        {})
 
-            return views
-        })
+                return views
+            })
             .startWith(emptyTeeth)
             .remember()
 

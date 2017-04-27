@@ -47,10 +47,11 @@ export function pedal(transmission, { defaultGear = { intent: (sources) => ({}),
         else {
             gear = transmission;
         }
-        const spin = gear.map(gear => {
+        const spin = xs.fromObservable(gear)
+            .map(gear => {
             const actions = gear.intent ? gear.intent(sources) : defaultIntent(sources);
-            const state = (gear.model ? gear.model(actions) : defaultModel(actions))
-                .replaceError((err) => gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions))
+            const state = xs.fromObservable(gear.model ? gear.model(actions) : defaultModel(actions))
+                .replaceError((err) => xs.fromObservable(gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions)))
                 .remember();
             const views = teeth.reduce((accum, tooth) => Object.assign(accum, {
                 [tooth]: state.filter(toothFilter(tooth, gear.teeth[tooth])).map(toothView(tooth, gear.teeth[tooth]))

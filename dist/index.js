@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 var adapt_1 = require("@cycle/run/lib/adapt");
 var xstream_1 = require("xstream");
 function pedal(transmission, _a) {
@@ -53,10 +54,11 @@ function pedal(transmission, _a) {
         else {
             gear = transmission;
         }
-        var spin = gear.map(function (gear) {
+        var spin = xstream_1.default.fromObservable(gear)
+            .map(function (gear) {
             var actions = gear.intent ? gear.intent(sources) : defaultIntent(sources);
-            var state = (gear.model ? gear.model(actions) : defaultModel(actions))
-                .replaceError(function (err) { return gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions); })
+            var state = xstream_1.default.fromObservable(gear.model ? gear.model(actions) : defaultModel(actions))
+                .replaceError(function (err) { return xstream_1.default.fromObservable(gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions)); })
                 .remember();
             var views = teeth.reduce(function (accum, tooth) {
                 return Object.assign(accum, (_a = {},
