@@ -4,6 +4,9 @@
         "target": "es5",
         "noLib": true,
         "moduleResolution": "node",
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
         "declaration": true,
         "outDir": "./dist/"
     },

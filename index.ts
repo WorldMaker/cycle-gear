@@ -1,5 +1,5 @@
 import { adapt } from '@cycle/run/lib/adapt'
-import xs, { Stream, Observable } from 'xstream'
+import xs, { Observable } from 'xstream'
 
 export interface GearView<TModel> {
     (model: TModel): any
@@ -30,34 +30,36 @@ export interface PedalOptions {
 }
 
 export function pedal(transmission: Transmission, {
-    defaultGear = { intent: (sources: any) => ({}), model: (actions: any) => xs.of({}), teeth: {} as GearTeeth<any> },
-    defaultFilter = (model: any) => true,
+    defaultGear = { intent: () => ({}), model: () => xs.of({}), teeth: {} as GearTeeth<any> },
+    defaultFilter = () => true,
     sinkMap = new Map()
 }: PedalOptions = {}) {
-    let { catch: defaultCatch, intent: defaultIntent, model: defaultModel } = defaultGear
-    defaultCatch = defaultCatch || ((error: any) => xs.throw(error))
-    defaultIntent = defaultIntent || ((sources: any) => ({}))
-    defaultModel = defaultModel || ((actions: any) => xs.of({}))
+    const defaultCatch = defaultGear.catch || ((error: any) => xs.throw(error))
+    const defaultIntent = defaultGear.intent || (() => ({}))
+    const defaultModel = defaultGear.model || (() => xs.of({}))
 
     // Fully expand tooth defaults to avoid doing all the tests below every time
-    const teeth = Object.keys(defaultGear.teeth)
     const toothDefaults: { [name: string]: GearTooth<any> } = {}
+    const teeth = Object.keys(defaultGear.teeth || {})
     const emptyTeeth = teeth.reduce((accum, cur) => Object.assign(accum, { [cur]: xs.never() }), {})
-    for (let tooth of teeth) {
-        const defGearTooth = defaultGear.teeth[tooth]
-        if (defGearTooth instanceof Function) {
-            toothDefaults[tooth] = { filter: defaultFilter, view: defGearTooth }
-        } else {
-            toothDefaults[tooth] = { filter: defGearTooth.filter || defaultFilter, view: defGearTooth.view }
+
+    if (defaultGear.teeth) {
+        for (let tooth of teeth) {
+            const defGearTooth = defaultGear.teeth[tooth]
+            if (defGearTooth instanceof Function) {
+                toothDefaults[tooth] = { filter: defaultFilter, view: defGearTooth }
+            } else {
+                toothDefaults[tooth] = { filter: defGearTooth.filter || defaultFilter, view: defGearTooth.view }
+            }
         }
     }
 
     // Filter helper
     const toothFilter = (name: string, tooth: GearTooth<any> | GearView<any>) => {
         if (!tooth || tooth instanceof Function) {
-            return toothDefaults[name].filter
+            return toothDefaults[name].filter || defaultFilter
         } else {
-            return tooth.filter || toothDefaults[name].filter
+            return tooth.filter || toothDefaults[name].filter || defaultFilter
         }
     }
 
@@ -87,9 +89,9 @@ export function pedal(transmission: Transmission, {
                     .replaceError((err: any) => xs.fromObservable(gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions)))
                     .remember()
                 const views = teeth.reduce((accum, tooth) => Object.assign(accum, {
-                    [tooth]: state.filter(toothFilter(tooth, gear.teeth[tooth])).map(toothView(tooth, gear.teeth[tooth]))
+                    [tooth]: state.filter(toothFilter(tooth, (gear.teeth || {})[tooth])).map(toothView(tooth, (gear.teeth || {})[tooth]))
                 }),
-                                        {})
+                                           {})
 
                 return views
             })

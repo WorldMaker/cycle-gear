@@ -1,30 +1,31 @@
 import { adapt } from '@cycle/run/lib/adapt';
 import xs from 'xstream';
-export function pedal(transmission, { defaultGear = { intent: (sources) => ({}), model: (actions) => xs.of({}), teeth: {} }, defaultFilter = (model) => true, sinkMap = new Map() } = {}) {
-    let { catch: defaultCatch, intent: defaultIntent, model: defaultModel } = defaultGear;
-    defaultCatch = defaultCatch || ((error) => xs.throw(error));
-    defaultIntent = defaultIntent || ((sources) => ({}));
-    defaultModel = defaultModel || ((actions) => xs.of({}));
+export function pedal(transmission, { defaultGear = { intent: () => ({}), model: () => xs.of({}), teeth: {} }, defaultFilter = () => true, sinkMap = new Map() } = {}) {
+    const defaultCatch = defaultGear.catch || ((error) => xs.throw(error));
+    const defaultIntent = defaultGear.intent || (() => ({}));
+    const defaultModel = defaultGear.model || (() => xs.of({}));
     // Fully expand tooth defaults to avoid doing all the tests below every time
-    const teeth = Object.keys(defaultGear.teeth);
     const toothDefaults = {};
+    const teeth = Object.keys(defaultGear.teeth || {});
     const emptyTeeth = teeth.reduce((accum, cur) => Object.assign(accum, { [cur]: xs.never() }), {});
-    for (let tooth of teeth) {
-        const defGearTooth = defaultGear.teeth[tooth];
-        if (defGearTooth instanceof Function) {
-            toothDefaults[tooth] = { filter: defaultFilter, view: defGearTooth };
-        }
-        else {
-            toothDefaults[tooth] = { filter: defGearTooth.filter || defaultFilter, view: defGearTooth.view };
+    if (defaultGear.teeth) {
+        for (let tooth of teeth) {
+            const defGearTooth = defaultGear.teeth[tooth];
+            if (defGearTooth instanceof Function) {
+                toothDefaults[tooth] = { filter: defaultFilter, view: defGearTooth };
+            }
+            else {
+                toothDefaults[tooth] = { filter: defGearTooth.filter || defaultFilter, view: defGearTooth.view };
+            }
         }
     }
     // Filter helper
     const toothFilter = (name, tooth) => {
         if (!tooth || tooth instanceof Function) {
-            return toothDefaults[name].filter;
+            return toothDefaults[name].filter || defaultFilter;
         }
         else {
-            return tooth.filter || toothDefaults[name].filter;
+            return tooth.filter || toothDefaults[name].filter || defaultFilter;
         }
     };
     // View helper
@@ -54,7 +55,7 @@ export function pedal(transmission, { defaultGear = { intent: (sources) => ({}),
                 .replaceError((err) => xs.fromObservable(gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions)))
                 .remember();
             const views = teeth.reduce((accum, tooth) => Object.assign(accum, {
-                [tooth]: state.filter(toothFilter(tooth, gear.teeth[tooth])).map(toothView(tooth, gear.teeth[tooth]))
+                [tooth]: state.filter(toothFilter(tooth, (gear.teeth || {})[tooth])).map(toothView(tooth, (gear.teeth || {})[tooth]))
             }), {});
             return views;
         })
