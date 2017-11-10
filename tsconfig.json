@@ -7,8 +7,12 @@
         "strict": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
+        "downlevelIteration": true,
         "declaration": true,
-        "outDir": "./dist/"
+        "outDir": "./dist/",
+        "plugins": [
+            { "name": "tslint-language-service"}
+        ]
     },
     "files": [
         "index.ts",

@@ -45,3 +45,14 @@ A `transmission` is an observable of gears or a factory from Cycle sources to an
 of gears. At the top level of an application might be a `transmission` defined by a history
 router such as [@cycle/history](https://github.com/cyclejs/history), and at lower levels a
 `transmission` might be some other sort of user-action dependent state machine.
+
+## `motor`
+
+`motor` is a main factory function for the `Gear` pattern. It takes a `gearbox` of
+Gears, default states for gears, which teeth to bind to which sinks, connectors to
+merge the output of gears, and from that builds a Cycle main to wire the gears up to
+Cycle sources and sinks.
+
+A `gearbox` is an observable of iterable sets of gears or a factory from Cycle sources
+to an observable of iterable sets of gears. This can be useful for component systems
+that have many similar, interlocking parts.
