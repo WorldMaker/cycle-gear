@@ -102,10 +102,8 @@ function spinGear(sources: any,
                   toothView: (name: string, tooth: GearTooth<any> | GearView<any>) => GearView<any>): (t: Gear<any, any>) => {} {
     const modelCache = new WeakMap<Gear<any, any>, xs<any>>()
     return gear => {
-        let state: xs<any>
-        if (modelCache.has(gear)) {
-            state = modelCache.get(gear) as xs<any>
-        } else {
+        let state = modelCache.get(gear)
+        if (!state) {
             const actions = gear.intent ? gear.intent(sources) : defaultIntent(sources)
             state = xs.fromObservable(gear.model ? gear.model(actions) : defaultModel(actions))
                 .replaceError((err: any) => xs.fromObservable(gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions)))
@@ -113,7 +111,7 @@ function spinGear(sources: any,
             modelCache.set(gear, state)
         }
         const views = teeth.reduce((accum, tooth) => Object.assign(accum, {
-            [tooth]: state.filter(toothFilter(tooth, (gear.teeth || {})[tooth])).map(toothView(tooth, (gear.teeth || {})[tooth]))
+            [tooth]: state!.filter(toothFilter(tooth, (gear.teeth || {})[tooth])).map(toothView(tooth, (gear.teeth || {})[tooth]))
         }), {})
         return views
     }
@@ -170,10 +168,8 @@ function spinGears(sources: any,
     return gears => {
         const views = teeth.reduce((acc, cur) => ({...acc, [cur]: [] }), {} as {[tooth: string]: Array<Observable<any>>})
         for (let gear of gears) {
-            let state: xs<any>
-            if (modelCache.has(gear)) {
-                state = modelCache.get(gear) as xs<any>
-            } else {
+            let state = modelCache.get(gear)
+            if (!state) {
                 const wrappedSources = sourcesWrapper(sources, gear)
                 const actions = gear.intent ? gear.intent(wrappedSources) : defaultIntent(wrappedSources)
                 state = xs.fromObservable(gear.model ? gear.model(actions) : defaultModel(actions))

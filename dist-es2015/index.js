@@ -45,11 +45,8 @@ function defaultsAndHelpers(defaultGear, defaultFilter) {
 function spinGear(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView) {
     const modelCache = new WeakMap();
     return gear => {
-        let state;
-        if (modelCache.has(gear)) {
-            state = modelCache.get(gear);
-        }
-        else {
+        let state = modelCache.get(gear);
+        if (!state) {
             const actions = gear.intent ? gear.intent(sources) : defaultIntent(sources);
             state = xs.fromObservable(gear.model ? gear.model(actions) : defaultModel(actions))
                 .replaceError((err) => xs.fromObservable(gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions)))
@@ -87,11 +84,8 @@ function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, to
     return gears => {
         const views = teeth.reduce((acc, cur) => (Object.assign({}, acc, { [cur]: [] })), {});
         for (let gear of gears) {
-            let state;
-            if (modelCache.has(gear)) {
-                state = modelCache.get(gear);
-            }
-            else {
+            let state = modelCache.get(gear);
+            if (!state) {
                 const wrappedSources = sourcesWrapper(sources, gear);
                 const actions = gear.intent ? gear.intent(wrappedSources) : defaultIntent(wrappedSources);
                 state = xs.fromObservable(gear.model ? gear.model(actions) : defaultModel(actions))

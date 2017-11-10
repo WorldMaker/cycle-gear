@@ -99,11 +99,8 @@ function defaultsAndHelpers(defaultGear, defaultFilter) {
 function spinGear(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView) {
     var modelCache = new WeakMap();
     return function (gear) {
-        var state;
-        if (modelCache.has(gear)) {
-            state = modelCache.get(gear);
-        }
-        else {
+        var state = modelCache.get(gear);
+        if (!state) {
             var actions_1 = gear.intent ? gear.intent(sources) : defaultIntent(sources);
             state = xstream_1.default.fromObservable(gear.model ? gear.model(actions_1) : defaultModel(actions_1))
                 .replaceError(function (err) { return xstream_1.default.fromObservable(gear.catch ? gear.catch(err, actions_1) : defaultCatch(err, actions_1)); })
@@ -152,11 +149,8 @@ function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, to
             var _a;
         }, {});
         var _loop_1 = function (gear) {
-            var state = void 0;
-            if (modelCache.has(gear)) {
-                state = modelCache.get(gear);
-            }
-            else {
+            var state = modelCache.get(gear);
+            if (!state) {
                 var wrappedSources = sourcesWrapper(sources, gear);
                 var actions_2 = gear.intent ? gear.intent(wrappedSources) : defaultIntent(wrappedSources);
                 state = xstream_1.default.fromObservable(gear.model ? gear.model(actions_2) : defaultModel(actions_2))
