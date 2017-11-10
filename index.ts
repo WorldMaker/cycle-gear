@@ -61,8 +61,7 @@ function defaultsAndHelpers(defaultGear: Gear<any, any>, defaultFilter: (model: 
             const defGearTooth = defaultGear.teeth[tooth]
             if (defGearTooth instanceof Function) {
                 toothDefaults[tooth] = { filter: defaultFilter, view: defGearTooth }
-            }
-            else {
+            } else {
                 toothDefaults[tooth] = { filter: defGearTooth.filter || defaultFilter, view: defGearTooth.view }
             }
         }
@@ -72,8 +71,7 @@ function defaultsAndHelpers(defaultGear: Gear<any, any>, defaultFilter: (model: 
     const toothFilter = (name: string, tooth: GearTooth<any> | GearView<any>) => {
         if (!tooth || tooth instanceof Function) {
             return toothDefaults[name].filter || defaultFilter
-        }
-        else {
+        } else {
             return tooth.filter || toothDefaults[name].filter || defaultFilter
         }
     }
@@ -82,11 +80,9 @@ function defaultsAndHelpers(defaultGear: Gear<any, any>, defaultFilter: (model: 
     const toothView = (name: string, tooth: GearTooth<any> | GearView<any>) => {
         if (!tooth) {
             return toothDefaults[name].view
-        }
-        else if (tooth instanceof Function) {
+        } else if (tooth instanceof Function) {
             return tooth
-        }
-        else {
+        } else {
             return tooth.view
         }
     }
@@ -113,7 +109,8 @@ function spinGear(sources: any,
         }
         const views = teeth.reduce((accum, tooth) => Object.assign(accum, {
             [tooth]: state!.filter(toothFilter(tooth, (gear.teeth || {})[tooth])).map(toothView(tooth, (gear.teeth || {})[tooth]))
-        }), {})
+        }),
+                                   {})
         return views
     }
 }
@@ -167,7 +164,8 @@ function spinGears(sources: any,
                    connectors: Map<string, ToothConnector<any, any, any>>): (t: Iterable<Gear<any, any>>) => {} {
     const modelCache = new WeakMap<Gear<any, any>, xs<any>>()
     return gears => {
-        const views = teeth.reduce((acc, cur) => ({...acc, [cur]: [] }), {} as {[tooth: string]: Array<Observable<any>>})
+        const views = teeth.reduce((acc, cur) => ({...acc, [cur]: [] as Array<Observable<any>> }),
+                                   {} as {[tooth: string]: Array<Observable<any>>})
         for (let gear of gears) {
             let state = modelCache.get(gear)
             if (!state) {

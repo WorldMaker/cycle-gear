@@ -5,6 +5,7 @@
         "noLib": true,
         "moduleResolution": "node",
         "strict": true,
+        "strictFunctionTypes": false,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "downlevelIteration": true,
