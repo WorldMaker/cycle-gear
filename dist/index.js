@@ -159,9 +159,16 @@ function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, to
                 modelCache.set(gear, state);
             }
             var _loop_2 = function (tooth) {
-                views[tooth].push(state
+                var view = state
                     .filter(toothFilter(tooth, (gear.teeth || {})[tooth]))
-                    .map(function (state) { return [toothView(tooth, (gear.teeth || {})[tooth])(state), gear]; }));
+                    .map(function (state) { return [toothView(tooth, (gear.teeth || {})[tooth])(state), gear]; });
+                var isolator = connectors.has(tooth)
+                    ? connectors.get(tooth).isolate || defaultConnector.isolate
+                    : defaultConnector.isolate;
+                if (isolator) {
+                    view = xstream_1.default.fromObservable(isolator(view, gear));
+                }
+                views[tooth].push(view);
             };
             try {
                 for (var teeth_2 = __values(teeth), teeth_2_1 = teeth_2.next(); !teeth_2_1.done; teeth_2_1 = teeth_2.next()) {

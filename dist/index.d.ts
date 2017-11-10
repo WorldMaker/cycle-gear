@@ -20,6 +20,7 @@ export declare type ToothReduce<TActions, TModel, TAccumulator> = (accumulator: 
 export interface ToothConnector<TActions, TModel, TAccumulator> {
     reduce: ToothReduce<TActions, TModel, TAccumulator>;
     init: () => TAccumulator;
+    isolate?: (sink: Observable<any>, gear: Gear<TActions, TModel>) => Observable<any>;
 }
 export declare type Transmission = ((sources: any) => Observable<Gear<any, any>>) | Observable<Gear<any, any>>;
 export declare type Gearbox = ((sources: any) => Observable<Iterable<Gear<any, any>>>) | Observable<Iterable<Gear<any, any>>>;

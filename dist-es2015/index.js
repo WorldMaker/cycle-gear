@@ -94,9 +94,16 @@ function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, to
                 modelCache.set(gear, state);
             }
             for (let tooth of teeth) {
-                views[tooth].push(state
+                let view = state
                     .filter(toothFilter(tooth, (gear.teeth || {})[tooth]))
-                    .map(state => [toothView(tooth, (gear.teeth || {})[tooth])(state), gear]));
+                    .map(state => [toothView(tooth, (gear.teeth || {})[tooth])(state), gear]);
+                const isolator = connectors.has(tooth)
+                    ? connectors.get(tooth).isolate || defaultConnector.isolate
+                    : defaultConnector.isolate;
+                if (isolator) {
+                    view = xs.fromObservable(isolator(view, gear));
+                }
+                views[tooth].push(view);
             }
         }
         return teeth.reduce((accum, tooth) => (Object.assign({}, accum, { [tooth]: xs.merge(...views[tooth])
