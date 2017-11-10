@@ -108,6 +108,7 @@ function spinGear(sources, defaultIntent, defaultModel, defaultCatch, teeth, too
             state = xstream_1.default.fromObservable(gear.model ? gear.model(actions_1) : defaultModel(actions_1))
                 .replaceError(function (err) { return xstream_1.default.fromObservable(gear.catch ? gear.catch(err, actions_1) : defaultCatch(err, actions_1)); })
                 .remember();
+            modelCache.set(gear, state);
         }
         var views = teeth.reduce(function (accum, tooth) {
             return Object.assign(accum, (_a = {},
@@ -161,6 +162,7 @@ function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, to
                 state = xstream_1.default.fromObservable(gear.model ? gear.model(actions_2) : defaultModel(actions_2))
                     .replaceError(function (err) { return xstream_1.default.fromObservable(gear.catch ? gear.catch(err, actions_2) : defaultCatch(err, actions_2)); })
                     .remember();
+                modelCache.set(gear, state);
             }
             var _loop_2 = function (tooth) {
                 views[tooth].push(state

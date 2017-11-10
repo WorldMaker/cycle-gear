@@ -110,6 +110,7 @@ function spinGear(sources: any,
             state = xs.fromObservable(gear.model ? gear.model(actions) : defaultModel(actions))
                 .replaceError((err: any) => xs.fromObservable(gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions)))
                 .remember()
+            modelCache.set(gear, state)
         }
         const views = teeth.reduce((accum, tooth) => Object.assign(accum, {
             [tooth]: state.filter(toothFilter(tooth, (gear.teeth || {})[tooth])).map(toothView(tooth, (gear.teeth || {})[tooth]))
@@ -178,6 +179,7 @@ function spinGears(sources: any,
                 state = xs.fromObservable(gear.model ? gear.model(actions) : defaultModel(actions))
                     .replaceError((err: any) => xs.fromObservable(gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions)))
                     .remember()
+                modelCache.set(gear, state)
             }
             for (let tooth of teeth) {
                 views[tooth].push(state
