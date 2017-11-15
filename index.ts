@@ -43,7 +43,7 @@ export interface PedalOptions {
 export interface MotorOptions extends PedalOptions {
     sourcesWrapper?: (sources: any, gear: Gear<any, any>) => any
     defaultConnector?: ToothConnector<any, any, any, any>
-    connectors?: Map<string, ToothReduce<any, any, any, any>>
+    connectors?: Map<string, ToothConnector<any, any, any, any>>
 }
 
 function defaultsAndHelpers(defaultGear: Gear<any, any>, defaultFilter: (model: any) => boolean) {
