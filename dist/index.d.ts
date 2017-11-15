@@ -18,8 +18,9 @@ export interface Gear<TActions, TModel> {
 }
 export declare type ToothReduce<TActions, TModel, TTooth, TAccumulator> = (accumulator: TAccumulator, current: [TTooth, Gear<TActions, TModel>]) => TAccumulator;
 export interface ToothConnector<TActions, TModel, TTooth, TAccumulator> {
-    reduce: ToothReduce<TActions, TModel, TTooth, TAccumulator>;
-    init: () => TAccumulator;
+    fold?: boolean;
+    reduce?: ToothReduce<TActions, TModel, TTooth, TAccumulator>;
+    init?: () => TAccumulator;
     isolate?: (sources: any, sink: Observable<any>, gear: Gear<TActions, TModel>) => Observable<any>;
 }
 export declare type Transmission = ((sources: any) => Observable<Gear<any, any>>) | Observable<Gear<any, any>>;

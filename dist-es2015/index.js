@@ -79,6 +79,18 @@ export function pedal(transmission, { defaultGear = { intent: () => ({}), model:
         return sinks;
     };
 }
+const defaultReduce = (acc, [cur, gear]) => (Object.assign({}, acc, { [gear.name || '?']: cur }));
+function connectTeeth(teeth, connector) {
+    const merged = xs.merge(...teeth);
+    if (connector.fold) {
+        return merged
+            .fold(connector.reduce || defaultReduce, connector.init || {});
+    }
+    else {
+        return merged
+            .map(([cur]) => cur);
+    }
+}
 function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, sourcesWrapper, defaultConnector, connectors) {
     const modelCache = new WeakMap();
     return gears => {
@@ -106,15 +118,10 @@ function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, to
                 views[tooth].push(view);
             }
         }
-        return teeth.reduce((accum, tooth) => (Object.assign({}, accum, { [tooth]: xs.merge(...views[tooth])
-                .fold(connectors.has(tooth) ? connectors.get(tooth).reduce : defaultConnector.reduce, connectors.has(tooth) ? connectors.get(tooth).init() : defaultConnector.init()) })), {});
+        return teeth.reduce((accum, tooth) => (Object.assign({}, accum, { [tooth]: connectTeeth(views[tooth], connectors.get(tooth) || defaultConnector) })), {});
     };
 }
-const defaultDefaultConnector = {
-    reduce: (acc, [cur, gear]) => (Object.assign({}, acc, { [gear.name || '?']: cur })),
-    init: () => ({})
-};
-export function motor(gearbox, { defaultGear = { intent: () => ({}), model: () => xs.of({}), teeth: {} }, defaultFilter = () => true, defaultConnector = defaultDefaultConnector, sourcesWrapper = (sources) => sources, connectors = new Map(), sinkMap = new Map() } = {}) {
+export function motor(gearbox, { defaultGear = { intent: () => ({}), model: () => xs.of({}), teeth: {} }, defaultFilter = () => true, defaultConnector = {}, sourcesWrapper = (sources) => sources, connectors = new Map(), sinkMap = new Map() } = {}) {
     const { defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, emptyTeeth } = defaultsAndHelpers(defaultGear, defaultFilter);
     return (sources) => {
         let gears;

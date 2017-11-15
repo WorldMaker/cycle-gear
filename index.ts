@@ -25,8 +25,9 @@ export interface Gear<TActions, TModel> {
 export type ToothReduce<TActions, TModel, TTooth, TAccumulator> = (accumulator: TAccumulator, current: [TTooth, Gear<TActions, TModel>]) => TAccumulator
 
 export interface ToothConnector<TActions, TModel, TTooth, TAccumulator> {
-    reduce: ToothReduce<TActions, TModel, TTooth, TAccumulator>
-    init: () => TAccumulator
+    fold?: boolean
+    reduce?: ToothReduce<TActions, TModel, TTooth, TAccumulator>
+    init?: () => TAccumulator
     isolate?: (sources: any, sink: Observable<any>, gear: Gear<TActions, TModel>) => Observable<any>
 }
 
@@ -152,6 +153,19 @@ export function pedal(transmission: Transmission, {
     }
 }
 
+const defaultReduce = (acc: any, [cur, gear]: [any, Gear<any, any>]) => ({ ...acc, [gear.name || '?']: cur })
+
+function connectTeeth(teeth: Array<Observable<any>>, connector: ToothConnector<any, any, any, any>) {
+    const merged = xs.merge(...teeth)
+    if (connector.fold) {
+        return merged
+            .fold(connector.reduce || defaultReduce, connector.init || {})
+    } else {
+        return merged
+            .map(([cur]: [any]) => cur)
+    }
+}
+
 function spinGears(sources: any,
                    defaultIntent: (sources: any) => any,
                    defaultModel: (actions: any) => Observable<any>,
@@ -191,23 +205,16 @@ function spinGears(sources: any,
         }
         return teeth.reduce((accum, tooth) => ({
             ...accum,
-            [tooth]: xs.merge(...views[tooth])
-                .fold(connectors.has(tooth) ? connectors.get(tooth)!.reduce : defaultConnector.reduce,
-                      connectors.has(tooth) ? connectors.get(tooth)!.init() : defaultConnector.init())
+            [tooth]: connectTeeth(views[tooth], connectors.get(tooth) || defaultConnector)
         }),
                             {})
     }
 }
 
-const defaultDefaultConnector = {
-    reduce: (acc: any, [cur, gear]: [any, Gear<any, any>]) => ({ ...acc, [gear.name || '?']: cur }),
-    init: () => ({})
-}
-
 export function motor(gearbox: Gearbox, {
     defaultGear = { intent: () => ({}), model: () => xs.of({}), teeth: {} as GearTeeth<any> },
     defaultFilter = () => true,
-    defaultConnector = defaultDefaultConnector,
+    defaultConnector = {},
     sourcesWrapper = (sources: any) => sources,
     connectors = new Map(),
     sinkMap = new Map()
