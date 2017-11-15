@@ -22,12 +22,12 @@ export interface Gear<TActions, TModel> {
     teeth?: GearTeeth<TModel>
 }
 
-export type ToothReduce<TActions, TModel, TAccumulator> = (accumulator: TAccumulator, current: [TModel, Gear<TActions, TModel>]) => TAccumulator
+export type ToothReduce<TActions, TModel, TTooth, TAccumulator> = (accumulator: TAccumulator, current: [TTooth, Gear<TActions, TModel>]) => TAccumulator
 
-export interface ToothConnector<TActions, TModel, TAccumulator> {
-    reduce: ToothReduce<TActions, TModel, TAccumulator>
+export interface ToothConnector<TActions, TModel, TTooth, TAccumulator> {
+    reduce: ToothReduce<TActions, TModel, TTooth, TAccumulator>
     init: () => TAccumulator
-    isolate?: (sink: Observable<any>, gear: Gear<TActions, TModel>) => Observable<any>
+    isolate?: (sources: any, sink: Observable<any>, gear: Gear<TActions, TModel>) => Observable<any>
 }
 
 export type Transmission = ((sources: any) => Observable<Gear<any, any>>) | Observable<Gear<any, any>>
@@ -42,8 +42,8 @@ export interface PedalOptions {
 
 export interface MotorOptions extends PedalOptions {
     sourcesWrapper?: (sources: any, gear: Gear<any, any>) => any
-    defaultConnector?: ToothConnector<any, any, any>
-    connectors?: Map<string, ToothReduce<any, any, any>>
+    defaultConnector?: ToothConnector<any, any, any, any>
+    connectors?: Map<string, ToothReduce<any, any, any, any>>
 }
 
 function defaultsAndHelpers(defaultGear: Gear<any, any>, defaultFilter: (model: any) => boolean) {
@@ -160,11 +160,11 @@ function spinGears(sources: any,
                    toothFilter: (name: string, tooth: GearTooth<any> | GearView<any>) => (model: any) => boolean,
                    toothView: (name: string, tooth: GearTooth<any> | GearView<any>) => GearView<any>,
                    sourcesWrapper: (sources: any, gear: Gear<any, any>) => any,
-                   defaultConnector: ToothConnector<any, any, any>,
-                   connectors: Map<string, ToothConnector<any, any, any>>): (t: Iterable<Gear<any, any>>) => {} {
+                   defaultConnector: ToothConnector<any, any, any, any>,
+                   connectors: Map<string, ToothConnector<any, any, any, any>>): (t: Iterable<Gear<any, any>>) => {} {
     const modelCache = new WeakMap<Gear<any, any>, xs<any>>()
     return gears => {
-        const views = teeth.reduce((acc, cur) => ({...acc, [cur]: [] as Array<Observable<any>> }),
+        const views = teeth.reduce((acc, cur) => ({ ...acc, [cur]: [] as Array<Observable<any>> }),
                                    {} as {[tooth: string]: Array<Observable<any>>})
         for (let gear of gears) {
             let state = modelCache.get(gear)
@@ -184,7 +184,7 @@ function spinGears(sources: any,
                     ? connectors.get(tooth)!.isolate || defaultConnector.isolate
                     : defaultConnector.isolate
                 if (isolator) {
-                    view = xs.fromObservable(isolator(view, gear))
+                    view = xs.fromObservable(isolator(sources, view, gear))
                 }
                 views[tooth].push(view)
             }
@@ -200,7 +200,7 @@ function spinGears(sources: any,
 }
 
 const defaultDefaultConnector = {
-    reduce: (acc: any, [cur, gear]: [any, Gear<any, any>]) => ({...acc, [gear.name || '?']: cur}),
+    reduce: (acc: any, [cur, gear]: [any, Gear<any, any>]) => ({ ...acc, [gear.name || '?']: cur }),
     init: () => ({})
 }
 

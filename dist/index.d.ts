@@ -16,11 +16,11 @@ export interface Gear<TActions, TModel> {
     model?: (actions: TActions) => Observable<TModel>;
     teeth?: GearTeeth<TModel>;
 }
-export declare type ToothReduce<TActions, TModel, TAccumulator> = (accumulator: TAccumulator, current: [TModel, Gear<TActions, TModel>]) => TAccumulator;
-export interface ToothConnector<TActions, TModel, TAccumulator> {
-    reduce: ToothReduce<TActions, TModel, TAccumulator>;
+export declare type ToothReduce<TActions, TModel, TTooth, TAccumulator> = (accumulator: TAccumulator, current: [TTooth, Gear<TActions, TModel>]) => TAccumulator;
+export interface ToothConnector<TActions, TModel, TTooth, TAccumulator> {
+    reduce: ToothReduce<TActions, TModel, TTooth, TAccumulator>;
     init: () => TAccumulator;
-    isolate?: (sink: Observable<any>, gear: Gear<TActions, TModel>) => Observable<any>;
+    isolate?: (sources: any, sink: Observable<any>, gear: Gear<TActions, TModel>) => Observable<any>;
 }
 export declare type Transmission = ((sources: any) => Observable<Gear<any, any>>) | Observable<Gear<any, any>>;
 export declare type Gearbox = ((sources: any) => Observable<Iterable<Gear<any, any>>>) | Observable<Iterable<Gear<any, any>>>;
@@ -31,8 +31,8 @@ export interface PedalOptions {
 }
 export interface MotorOptions extends PedalOptions {
     sourcesWrapper?: (sources: any, gear: Gear<any, any>) => any;
-    defaultConnector?: ToothConnector<any, any, any>;
-    connectors?: Map<string, ToothReduce<any, any, any>>;
+    defaultConnector?: ToothConnector<any, any, any, any>;
+    connectors?: Map<string, ToothReduce<any, any, any, any>>;
 }
 export declare function pedal(transmission: Transmission, {defaultGear, defaultFilter, sinkMap}?: PedalOptions): (sources: any) => {};
 export declare function motor(gearbox: Gearbox, {defaultGear, defaultFilter, defaultConnector, sourcesWrapper, connectors, sinkMap}?: MotorOptions): (sources: any) => {};

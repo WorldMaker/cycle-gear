@@ -101,7 +101,7 @@ function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, to
                     ? connectors.get(tooth).isolate || defaultConnector.isolate
                     : defaultConnector.isolate;
                 if (isolator) {
-                    view = xs.fromObservable(isolator(view, gear));
+                    view = xs.fromObservable(isolator(sources, view, gear));
                 }
                 views[tooth].push(view);
             }
