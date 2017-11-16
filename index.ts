@@ -239,11 +239,13 @@ export function motor(gearbox: Gearbox, {
         const spin = xs.fromObservable<Iterable<Gear<any, any>>>(gears)
             .map(spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, sourcesWrapper, defaultConnector, connectors))
             .startWith([])
+            .debug('cycle-gear spin')
             .remember()
 
         const sinks = teeth.reduce((accum, tooth) => {
             let view = spin.map(spins => xs.fromArray(spins)
-                    .map(spin => spin[tooth])
+                    .map(gear => gear[tooth])
+                    .debug('cycle-gear spin-tooth')
                     .filter(toothView => !!toothView)
                     .compose(flattenConcurrently))
                 .flatten()
