@@ -100,6 +100,7 @@ function spinGear(sources: any,
                   teeth: string[],
                   toothFilter: (name: string, tooth: GearTooth<any> | GearView<any>) => (model: any) => boolean,
                   toothView: (name: string, tooth: GearTooth<any> | GearView<any>) => GearView<any>,
+                  toothCombineGear = false,
                   defaultConnector: ToothConnector<any, any, any, any> = {},
                   connectors: Map<string, ToothConnector<any, any, any, any>> = new Map()): (t: Gear<any, any>) => {} {
     const modelCache = new WeakMap<Gear<any, any>, xs<any>>()
@@ -116,10 +117,13 @@ function spinGear(sources: any,
         const views = teeth.reduce((accum, tooth) => {
             let view = state!.filter(toothFilter(tooth, (gear.teeth || {})[tooth])).map(toothView(tooth, (gear.teeth || {})[tooth]))
             const isolator = connectors.has(tooth)
-            ? connectors.get(tooth)!.isolate || defaultConnector.isolate
-            : defaultConnector.isolate
+                ? connectors.get(tooth)!.isolate || defaultConnector.isolate
+                : defaultConnector.isolate
             if (isolator) {
                 view = xs.fromObservable(isolator(sources, view, gear))
+            }
+            if (toothCombineGear) {
+                view = view.map(v => [v, gear])
             }
             return Object.assign(accum, {
                 [tooth]: view
@@ -196,6 +200,7 @@ function spinGears(sources: any,
                                            teeth,
                                            toothFilter,
                                            toothView,
+                                           true,
                                            defaultConnector,
                                            connectors)
                 spinCache.set(gear, spinnning)
