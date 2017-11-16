@@ -159,6 +159,7 @@ var defaultReduce = function (acc, _a) {
 };
 function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, sourcesWrapper, defaultConnector, connectors) {
     var spinCache = new WeakMap();
+    var spinner = spinGear(sources, defaultIntent, defaultModel, defaultCatch, sourcesWrapper, teeth, toothFilter, toothView, true, defaultConnector, connectors);
     return function (gears) {
         var spins = [];
         try {
@@ -169,7 +170,7 @@ function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, to
                     spins.push(cached);
                 }
                 else {
-                    var spinnning = spinGear(sources, defaultIntent, defaultModel, defaultCatch, sourcesWrapper, teeth, toothFilter, toothView, true, defaultConnector, connectors);
+                    var spinnning = spinner(gear);
                     spinCache.set(gear, spinnning);
                     spins.push(spinnning);
                 }
@@ -200,12 +201,10 @@ function motor(gearbox, _a) {
         var spin = xstream_1.default.fromObservable(gears)
             .map(spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, sourcesWrapper, defaultConnector, connectors))
             .startWith([])
-            .debug('cycle-gear spin')
             .remember();
         var sinks = teeth.reduce(function (accum, tooth) {
             var view = spin.map(function (spins) { return xstream_1.default.fromArray(spins)
                 .map(function (gear) { return gear[tooth]; })
-                .debug('cycle-gear spin-tooth')
                 .filter(function (toothView) { return !!toothView; })
                 .compose(flattenConcurrently_1.default); })
                 .flatten();

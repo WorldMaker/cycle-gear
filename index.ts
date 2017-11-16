@@ -185,6 +185,17 @@ function spinGears(sources: any,
                    defaultConnector: ToothConnector<any, any, any, any>,
                    connectors: Map<string, ToothConnector<any, any, any, any>>): (t: Iterable<Gear<any, any>>) => any[] {
     const spinCache = new WeakMap<Gear<any, any>, any>()
+    const spinner = spinGear(sources,
+                             defaultIntent,
+                             defaultModel,
+                             defaultCatch,
+                             sourcesWrapper,
+                             teeth,
+                             toothFilter,
+                             toothView,
+                             true,
+                             defaultConnector,
+                             connectors)
     return gears => {
         const spins = []
         for (let gear of gears) {
@@ -192,17 +203,7 @@ function spinGears(sources: any,
             if (cached) {
                 spins.push(cached)
             } else {
-                const spinnning = spinGear(sources,
-                                           defaultIntent,
-                                           defaultModel,
-                                           defaultCatch,
-                                           sourcesWrapper,
-                                           teeth,
-                                           toothFilter,
-                                           toothView,
-                                           true,
-                                           defaultConnector,
-                                           connectors)
+                const spinnning = spinner(gear)
                 spinCache.set(gear, spinnning)
                 spins.push(spinnning)
             }
@@ -239,13 +240,11 @@ export function motor(gearbox: Gearbox, {
         const spin = xs.fromObservable<Iterable<Gear<any, any>>>(gears)
             .map(spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, sourcesWrapper, defaultConnector, connectors))
             .startWith([])
-            .debug('cycle-gear spin')
             .remember()
 
         const sinks = teeth.reduce((accum, tooth) => {
             let view = spin.map(spins => xs.fromArray(spins)
                     .map(gear => gear[tooth])
-                    .debug('cycle-gear spin-tooth')
                     .filter(toothView => !!toothView)
                     .compose(flattenConcurrently))
                 .flatten()
