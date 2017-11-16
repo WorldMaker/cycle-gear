@@ -29,11 +29,11 @@ export interface PedalOptions {
     defaultGear?: Gear<any, any>;
     defaultFilter?: (model: any) => boolean;
     sinkMap?: Map<string, string>;
+    sourcesWrapper?: (sources: any, gear: Gear<any, any>) => any;
 }
 export interface MotorOptions extends PedalOptions {
-    sourcesWrapper?: (sources: any, gear: Gear<any, any>) => any;
     defaultConnector?: ToothConnector<any, any, any, any>;
     connectors?: Map<string, ToothConnector<any, any, any, any>>;
 }
-export declare function pedal(transmission: Transmission, {defaultGear, defaultFilter, sinkMap}?: PedalOptions): (sources: any) => {};
+export declare function pedal(transmission: Transmission, {defaultGear, defaultFilter, sinkMap, sourcesWrapper}?: PedalOptions): (sources: any) => {};
 export declare function motor(gearbox: Gearbox, {defaultGear, defaultFilter, defaultConnector, sourcesWrapper, connectors, sinkMap}?: MotorOptions): (sources: any) => {};

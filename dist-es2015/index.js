@@ -1,5 +1,6 @@
 import { adapt } from '@cycle/run/lib/adapt';
 import xs from 'xstream';
+import flattenConcurrently from 'xstream/extra/flattenConcurrently';
 function defaultsAndHelpers(defaultGear, defaultFilter) {
     const defaultCatch = defaultGear.catch || ((error) => xs.throw(error));
     const defaultIntent = defaultGear.intent || (() => ({}));
@@ -42,24 +43,34 @@ function defaultsAndHelpers(defaultGear, defaultFilter) {
     };
     return { defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, emptyTeeth };
 }
-function spinGear(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView) {
+function spinGear(sources, defaultIntent, defaultModel, defaultCatch, sourcesWrapper, teeth, toothFilter, toothView, defaultConnector = {}, connectors = new Map()) {
     const modelCache = new WeakMap();
     return gear => {
         let state = modelCache.get(gear);
         if (!state) {
-            const actions = gear.intent ? gear.intent(sources) : defaultIntent(sources);
+            const wrappedSources = sourcesWrapper(sources, gear);
+            const actions = gear.intent ? gear.intent(wrappedSources) : defaultIntent(wrappedSources);
             state = xs.fromObservable(gear.model ? gear.model(actions) : defaultModel(actions))
                 .replaceError((err) => xs.fromObservable(gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions)))
                 .remember();
             modelCache.set(gear, state);
         }
-        const views = teeth.reduce((accum, tooth) => Object.assign(accum, {
-            [tooth]: state.filter(toothFilter(tooth, (gear.teeth || {})[tooth])).map(toothView(tooth, (gear.teeth || {})[tooth]))
-        }), {});
+        const views = teeth.reduce((accum, tooth) => {
+            let view = state.filter(toothFilter(tooth, (gear.teeth || {})[tooth])).map(toothView(tooth, (gear.teeth || {})[tooth]));
+            const isolator = connectors.has(tooth)
+                ? connectors.get(tooth).isolate || defaultConnector.isolate
+                : defaultConnector.isolate;
+            if (isolator) {
+                view = xs.fromObservable(isolator(sources, view, gear));
+            }
+            return Object.assign(accum, {
+                [tooth]: view
+            });
+        }, {});
         return views;
     };
 }
-export function pedal(transmission, { defaultGear = { intent: () => ({}), model: () => xs.of({}), teeth: {} }, defaultFilter = () => true, sinkMap = new Map() } = {}) {
+export function pedal(transmission, { defaultGear = { intent: () => ({}), model: () => xs.of({}), teeth: {} }, defaultFilter = () => true, sinkMap = new Map(), sourcesWrapper = (sources) => sources } = {}) {
     const { defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, emptyTeeth } = defaultsAndHelpers(defaultGear, defaultFilter);
     return (sources) => {
         let gear;
@@ -70,7 +81,7 @@ export function pedal(transmission, { defaultGear = { intent: () => ({}), model:
             gear = transmission;
         }
         const spin = xs.fromObservable(gear)
-            .map(spinGear(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView))
+            .map(spinGear(sources, defaultIntent, defaultModel, defaultCatch, sourcesWrapper, teeth, toothFilter, toothView))
             .startWith(emptyTeeth)
             .remember();
         const sinks = teeth.reduce((accum, tooth) => Object.assign(accum, {
@@ -80,49 +91,26 @@ export function pedal(transmission, { defaultGear = { intent: () => ({}), model:
     };
 }
 const defaultReduce = (acc, [cur, gear]) => (Object.assign({}, acc, { [gear.name || '?']: cur }));
-function connectTeeth(teeth, connector) {
-    const merged = xs.merge(...teeth);
-    if (connector.fold) {
-        return merged
-            .fold(connector.reduce || defaultReduce, connector.init || {});
-    }
-    else {
-        return merged
-            .map(([cur]) => cur);
-    }
-}
 function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, sourcesWrapper, defaultConnector, connectors) {
-    const modelCache = new WeakMap();
+    const spinCache = new WeakMap();
     return gears => {
-        const views = teeth.reduce((acc, cur) => (Object.assign({}, acc, { [cur]: [] })), {});
+        const spins = [];
         for (let gear of gears) {
-            let state = modelCache.get(gear);
-            if (!state) {
-                const wrappedSources = sourcesWrapper(sources, gear);
-                const actions = gear.intent ? gear.intent(wrappedSources) : defaultIntent(wrappedSources);
-                state = xs.fromObservable(gear.model ? gear.model(actions) : defaultModel(actions))
-                    .replaceError((err) => xs.fromObservable(gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions)))
-                    .remember();
-                modelCache.set(gear, state);
+            const cached = spinCache.get(gear);
+            if (cached) {
+                spins.push(cached);
             }
-            for (let tooth of teeth) {
-                let view = state
-                    .filter(toothFilter(tooth, (gear.teeth || {})[tooth]))
-                    .map(state => [toothView(tooth, (gear.teeth || {})[tooth])(state), gear]);
-                const isolator = connectors.has(tooth)
-                    ? connectors.get(tooth).isolate || defaultConnector.isolate
-                    : defaultConnector.isolate;
-                if (isolator) {
-                    view = xs.fromObservable(isolator(sources, view, gear));
-                }
-                views[tooth].push(view);
+            else {
+                const spinnning = spinGear(sources, defaultIntent, defaultModel, defaultCatch, sourcesWrapper, teeth, toothFilter, toothView, defaultConnector, connectors);
+                spinCache.set(gear, spinnning);
+                spins.push(spinnning);
             }
         }
-        return teeth.reduce((accum, tooth) => (Object.assign({}, accum, { [tooth]: connectTeeth(views[tooth], connectors.get(tooth) || defaultConnector) })), {});
+        return spins;
     };
 }
 export function motor(gearbox, { defaultGear = { intent: () => ({}), model: () => xs.of({}), teeth: {} }, defaultFilter = () => true, defaultConnector = {}, sourcesWrapper = (sources) => sources, connectors = new Map(), sinkMap = new Map() } = {}) {
-    const { defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, emptyTeeth } = defaultsAndHelpers(defaultGear, defaultFilter);
+    const { defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView } = defaultsAndHelpers(defaultGear, defaultFilter);
     return (sources) => {
         let gears;
         if (gearbox instanceof Function) {
@@ -133,11 +121,22 @@ export function motor(gearbox, { defaultGear = { intent: () => ({}), model: () =
         }
         const spin = xs.fromObservable(gears)
             .map(spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, sourcesWrapper, defaultConnector, connectors))
-            .startWith(emptyTeeth)
+            .startWith([])
             .remember();
-        const sinks = teeth.reduce((accum, tooth) => Object.assign(accum, {
-            [sinkMap.has(tooth) ? sinkMap.get(tooth) : tooth]: adapt(spin.map((views) => views[tooth]).flatten())
-        }), {});
+        const sinks = teeth.reduce((accum, tooth) => {
+            let view = spin.map(spins => xs.fromArray(spins)
+                .map(spin => spin[tooth])
+                .compose(flattenConcurrently))
+                .flatten();
+            const connector = connectors.get(tooth) || defaultConnector;
+            if (connector.fold) {
+                view = view.fold(connector.reduce || defaultReduce, connector.init || {});
+            }
+            else {
+                view = view.map(([cur]) => cur);
+            }
+            return Object.assign({}, accum, { [sinkMap.has(tooth) ? sinkMap.get(tooth) : tooth]: adapt(view) });
+        }, {});
         return sinks;
     };
 }
