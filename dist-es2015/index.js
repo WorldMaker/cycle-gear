@@ -126,6 +126,7 @@ export function motor(gearbox, { defaultGear = { intent: () => ({}), model: () =
         const sinks = teeth.reduce((accum, tooth) => {
             let view = spin.map(spins => xs.fromArray(spins)
                 .map(spin => spin[tooth])
+                .filter(toothView => !!toothView)
                 .compose(flattenConcurrently))
                 .flatten();
             const connector = connectors.get(tooth) || defaultConnector;

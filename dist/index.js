@@ -200,6 +200,7 @@ function motor(gearbox, _a) {
         var sinks = teeth.reduce(function (accum, tooth) {
             var view = spin.map(function (spins) { return xstream_1.default.fromArray(spins)
                 .map(function (spin) { return spin[tooth]; })
+                .filter(function (toothView) { return !!toothView; })
                 .compose(flattenConcurrently_1.default); })
                 .flatten();
             var connector = connectors.get(tooth) || defaultConnector;
