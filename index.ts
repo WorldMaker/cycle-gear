@@ -44,6 +44,10 @@ export interface PedalOptions {
 }
 
 export interface MotorOptions extends PedalOptions {
+    /**
+     * Gears are only ever added cumulatively, never removed/changed
+     */
+    cumulative?: boolean
     defaultConnector?: ToothConnector<any, any, any, any>
     connectors?: Map<string, ToothConnector<any, any, any, any>>
 }
@@ -181,6 +185,7 @@ function spinGears(sources: any,
                    teeth: string[],
                    toothFilter: (name: string, tooth: GearTooth<any> | GearView<any>) => (model: any) => boolean,
                    toothView: (name: string, tooth: GearTooth<any> | GearView<any>) => GearView<any>,
+                   cumulative: boolean,
                    sourcesWrapper: (sources: any, gear: Gear<any, any>) => any,
                    defaultConnector: ToothConnector<any, any, any, any>,
                    connectors: Map<string, ToothConnector<any, any, any, any>>): (t: Iterable<Gear<any, any>>) => any[] {
@@ -200,7 +205,7 @@ function spinGears(sources: any,
         const spins = []
         for (let gear of gears) {
             const cached = spinCache.get(gear)
-            if (cached) {
+            if (!cumulative && cached) {
                 spins.push(cached)
             } else {
                 const spinnning = spinner(gear)
@@ -216,6 +221,7 @@ export function motor(gearbox: Gearbox, {
     defaultGear = { intent: () => ({}), model: () => xs.of({}), teeth: {} as GearTeeth<any> },
     defaultFilter = () => true,
     defaultConnector = {},
+    cumulative = false,
     sourcesWrapper = (sources: any) => sources,
     connectors = new Map(),
     sinkMap = new Map()
@@ -237,17 +243,43 @@ export function motor(gearbox: Gearbox, {
             gears = gearbox
         }
 
-        const spin = xs.fromObservable<Iterable<Gear<any, any>>>(gears)
-            .map(spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, sourcesWrapper, defaultConnector, connectors))
+        let spin = xs.fromObservable<Iterable<Gear<any, any>>>(gears)
+            .map(spinGears(sources,
+                           defaultIntent,
+                           defaultModel,
+                           defaultCatch,
+                           teeth,
+                           toothFilter,
+                           toothView,
+                           cumulative,
+                           sourcesWrapper,
+                           defaultConnector,
+                           connectors))
             .startWith([])
-            .remember()
+
+        if (cumulative) {
+            spin = spin
+                .map(spins => xs.fromArray(spins))
+                .compose(flattenConcurrently)
+                .remember()
+        } else {
+            spin = spin.remember()
+        }
 
         const sinks = teeth.reduce((accum, tooth) => {
-            let view = spin.map(spins => xs.fromArray(spins)
-                    .map(gear => gear[tooth])
+            let view: xs<any>
+            if (cumulative) {
+                view = spin
+                    .map((gear: any) => gear[tooth])
                     .filter(toothView => !!toothView)
-                    .compose(flattenConcurrently))
-                .flatten()
+                    .compose(flattenConcurrently)
+            } else {
+                view = spin.map(spins => xs.fromArray(spins)
+                        .map(gear => gear[tooth])
+                        .filter(toothView => !!toothView)
+                        .compose(flattenConcurrently))
+                    .flatten()
+            }
             const connector = connectors.get(tooth) || defaultConnector
             if (connector.fold) {
                 view = view.fold(connector.reduce || defaultReduce, connector.init || {})

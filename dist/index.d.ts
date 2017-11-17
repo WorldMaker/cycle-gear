@@ -32,8 +32,12 @@ export interface PedalOptions {
     sourcesWrapper?: (sources: any, gear: Gear<any, any>) => any;
 }
 export interface MotorOptions extends PedalOptions {
+    /**
+     * Gears are only ever added cumulatively, never removed/changed
+     */
+    cumulative?: boolean;
     defaultConnector?: ToothConnector<any, any, any, any>;
     connectors?: Map<string, ToothConnector<any, any, any, any>>;
 }
 export declare function pedal(transmission: Transmission, {defaultGear, defaultFilter, sinkMap, sourcesWrapper}?: PedalOptions): (sources: any) => {};
-export declare function motor(gearbox: Gearbox, {defaultGear, defaultFilter, defaultConnector, sourcesWrapper, connectors, sinkMap}?: MotorOptions): (sources: any) => {};
+export declare function motor(gearbox: Gearbox, {defaultGear, defaultFilter, defaultConnector, cumulative, sourcesWrapper, connectors, sinkMap}?: MotorOptions): (sources: any) => {};

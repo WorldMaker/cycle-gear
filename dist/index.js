@@ -157,7 +157,7 @@ var defaultReduce = function (acc, _a) {
     return (__assign({}, acc, (_c = {}, _c[gear.name || '?'] = cur, _c)));
     var _c;
 };
-function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, sourcesWrapper, defaultConnector, connectors) {
+function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, cumulative, sourcesWrapper, defaultConnector, connectors) {
     var spinCache = new WeakMap();
     var spinner = spinGear(sources, defaultIntent, defaultModel, defaultCatch, sourcesWrapper, teeth, toothFilter, toothView, true, defaultConnector, connectors);
     return function (gears) {
@@ -166,7 +166,7 @@ function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, to
             for (var gears_1 = __values(gears), gears_1_1 = gears_1.next(); !gears_1_1.done; gears_1_1 = gears_1.next()) {
                 var gear = gears_1_1.value;
                 var cached = spinCache.get(gear);
-                if (cached) {
+                if (!cumulative && cached) {
                     spins.push(cached);
                 }
                 else {
@@ -188,8 +188,8 @@ function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, to
     };
 }
 function motor(gearbox, _a) {
-    var _b = _a === void 0 ? {} : _a, _c = _b.defaultGear, defaultGear = _c === void 0 ? { intent: function () { return ({}); }, model: function () { return xstream_1.default.of({}); }, teeth: {} } : _c, _d = _b.defaultFilter, defaultFilter = _d === void 0 ? function () { return true; } : _d, _e = _b.defaultConnector, defaultConnector = _e === void 0 ? {} : _e, _f = _b.sourcesWrapper, sourcesWrapper = _f === void 0 ? function (sources) { return sources; } : _f, _g = _b.connectors, connectors = _g === void 0 ? new Map() : _g, _h = _b.sinkMap, sinkMap = _h === void 0 ? new Map() : _h;
-    var _j = defaultsAndHelpers(defaultGear, defaultFilter), defaultIntent = _j.defaultIntent, defaultModel = _j.defaultModel, defaultCatch = _j.defaultCatch, teeth = _j.teeth, toothFilter = _j.toothFilter, toothView = _j.toothView;
+    var _b = _a === void 0 ? {} : _a, _c = _b.defaultGear, defaultGear = _c === void 0 ? { intent: function () { return ({}); }, model: function () { return xstream_1.default.of({}); }, teeth: {} } : _c, _d = _b.defaultFilter, defaultFilter = _d === void 0 ? function () { return true; } : _d, _e = _b.defaultConnector, defaultConnector = _e === void 0 ? {} : _e, _f = _b.cumulative, cumulative = _f === void 0 ? false : _f, _g = _b.sourcesWrapper, sourcesWrapper = _g === void 0 ? function (sources) { return sources; } : _g, _h = _b.connectors, connectors = _h === void 0 ? new Map() : _h, _j = _b.sinkMap, sinkMap = _j === void 0 ? new Map() : _j;
+    var _k = defaultsAndHelpers(defaultGear, defaultFilter), defaultIntent = _k.defaultIntent, defaultModel = _k.defaultModel, defaultCatch = _k.defaultCatch, teeth = _k.teeth, toothFilter = _k.toothFilter, toothView = _k.toothView;
     return function (sources) {
         var gears;
         if (gearbox instanceof Function) {
@@ -199,15 +199,32 @@ function motor(gearbox, _a) {
             gears = gearbox;
         }
         var spin = xstream_1.default.fromObservable(gears)
-            .map(spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, sourcesWrapper, defaultConnector, connectors))
-            .startWith([])
-            .remember();
+            .map(spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, cumulative, sourcesWrapper, defaultConnector, connectors))
+            .startWith([]);
+        if (cumulative) {
+            spin = spin
+                .map(function (spins) { return xstream_1.default.fromArray(spins); })
+                .compose(flattenConcurrently_1.default)
+                .remember();
+        }
+        else {
+            spin = spin.remember();
+        }
         var sinks = teeth.reduce(function (accum, tooth) {
-            var view = spin.map(function (spins) { return xstream_1.default.fromArray(spins)
-                .map(function (gear) { return gear[tooth]; })
-                .filter(function (toothView) { return !!toothView; })
-                .compose(flattenConcurrently_1.default); })
-                .flatten();
+            var view;
+            if (cumulative) {
+                view = spin
+                    .map(function (gear) { return gear[tooth]; })
+                    .filter(function (toothView) { return !!toothView; })
+                    .compose(flattenConcurrently_1.default);
+            }
+            else {
+                view = spin.map(function (spins) { return xstream_1.default.fromArray(spins)
+                    .map(function (gear) { return gear[tooth]; })
+                    .filter(function (toothView) { return !!toothView; })
+                    .compose(flattenConcurrently_1.default); })
+                    .flatten();
+            }
             var connector = connectors.get(tooth) || defaultConnector;
             if (connector.fold) {
                 view = view.fold(connector.reduce || defaultReduce, connector.init || {});
