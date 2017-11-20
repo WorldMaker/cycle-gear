@@ -93,7 +93,7 @@ export function pedal(transmission, { defaultGear = { intent: () => ({}), model:
         return sinks;
     };
 }
-const defaultReduce = (acc, [cur, gear]) => (Object.assign({}, acc, { [gear.name || '?']: cur }));
+const defaultReduce = (acc, [cur, gear]) => Object.assign(acc, { [gear.name || '?']: cur });
 function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, cumulative, sourcesWrapper, defaultConnector, connectors) {
     const spinCache = new WeakMap();
     const spinner = spinGear(sources, defaultIntent, defaultModel, defaultCatch, sourcesWrapper, teeth, toothFilter, toothView, true, defaultConnector, connectors);
@@ -152,12 +152,14 @@ export function motor(gearbox, { defaultGear = { intent: () => ({}), model: () =
             }
             const connector = connectors.get(tooth) || defaultConnector;
             if (connector.fold) {
-                view = view.fold(connector.reduce || defaultReduce, connector.init || {});
+                view = view.fold(connector.reduce || defaultReduce, connector.init ? connector.init() : {});
             }
             else {
                 view = view.map(([cur]) => cur);
             }
-            return Object.assign({}, accum, { [sinkMap.has(tooth) ? sinkMap.get(tooth) : tooth]: adapt(view) });
+            return Object.assign(accum, {
+                [sinkMap.has(tooth) ? sinkMap.get(tooth) : tooth]: adapt(view)
+            });
         }, {});
         return sinks;
     };

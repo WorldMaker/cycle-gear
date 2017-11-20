@@ -1,12 +1,4 @@
 "use strict";
-var __assign = (this && this.__assign) || Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
-};
 var __values = (this && this.__values) || function (o) {
     var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
     if (m) return m.call(o);
@@ -154,7 +146,7 @@ function pedal(transmission, _a) {
 exports.pedal = pedal;
 var defaultReduce = function (acc, _a) {
     var _b = __read(_a, 2), cur = _b[0], gear = _b[1];
-    return (__assign({}, acc, (_c = {}, _c[gear.name || '?'] = cur, _c)));
+    return Object.assign(acc, (_c = {}, _c[gear.name || '?'] = cur, _c));
     var _c;
 };
 function spinGears(sources, defaultIntent, defaultModel, defaultCatch, teeth, toothFilter, toothView, cumulative, sourcesWrapper, defaultConnector, connectors) {
@@ -227,7 +219,7 @@ function motor(gearbox, _a) {
             }
             var connector = connectors.get(tooth) || defaultConnector;
             if (connector.fold) {
-                view = view.fold(connector.reduce || defaultReduce, connector.init || {});
+                view = view.fold(connector.reduce || defaultReduce, connector.init ? connector.init() : {});
             }
             else {
                 view = view.map(function (_a) {
@@ -235,7 +227,9 @@ function motor(gearbox, _a) {
                     return cur;
                 });
             }
-            return __assign({}, accum, (_a = {}, _a[sinkMap.has(tooth) ? sinkMap.get(tooth) : tooth] = adapt_1.adapt(view), _a));
+            return Object.assign(accum, (_a = {},
+                _a[sinkMap.has(tooth) ? sinkMap.get(tooth) : tooth] = adapt_1.adapt(view),
+                _a));
             var _a;
         }, {});
         return sinks;
