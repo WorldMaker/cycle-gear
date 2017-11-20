@@ -176,7 +176,7 @@ export function pedal(transmission: Transmission, {
     }
 }
 
-const defaultReduce = (acc: any, [cur, gear]: [any, Gear<any, any>]) => ({ ...acc, [gear.name || '?']: cur })
+const defaultReduce = (acc: any, [cur, gear]: [any, Gear<any, any>]) => Object.assign(acc, { [gear.name || '?']: cur })
 
 function spinGears(sources: any,
                    defaultIntent: (sources: any) => any,
@@ -282,14 +282,13 @@ export function motor(gearbox: Gearbox, {
             }
             const connector = connectors.get(tooth) || defaultConnector
             if (connector.fold) {
-                view = view.fold(connector.reduce || defaultReduce, connector.init || {})
+                view = view.fold(connector.reduce || defaultReduce, connector.init ? connector.init() : {})
             } else {
                 view = view.map(([cur]: [any]) => cur)
             }
-            return {
-                ...accum,
+            return Object.assign(accum, {
                 [sinkMap.has(tooth) ? sinkMap.get(tooth) : tooth]: adapt(view)
-            }
+            })
         },
                                    {})
 
