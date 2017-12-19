@@ -39,7 +39,7 @@
     "typescript": "^2.6.1"
   },
   "dependencies": {
-    "@cycle/run": "^3.1.0",
-    "xstream": "^11.0.0"
+    "@cycle/run": "^4.1.0",
+    "xstream": "^11.1.0"
   }
 }
