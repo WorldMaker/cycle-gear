@@ -37,6 +37,7 @@ export type Transmission = ((sources: any) => Observable<Gear<any, any>>) | Obse
 export type Gearbox = ((sources: any) => Observable<Iterable<Gear<any, any>>>) | Observable<Iterable<Gear<any, any>>>
 
 export interface PedalOptions {
+    cacheModel?: boolean
     defaultGear?: Gear<any, any>
     defaultFilter?: (model: any) => boolean
     sinkMap?: Map<string, string>
@@ -104,19 +105,22 @@ function spinGear(sources: any,
                   teeth: string[],
                   toothFilter: (name: string, tooth: GearTooth<any> | GearView<any>) => (model: any) => boolean,
                   toothView: (name: string, tooth: GearTooth<any> | GearView<any>) => GearView<any>,
+                  cacheModel = true,
                   toothCombineGear = false,
                   defaultConnector: ToothConnector<any, any, any, any> = {},
                   connectors: Map<string, ToothConnector<any, any, any, any>> = new Map()): (t: Gear<any, any>) => {} {
-    const modelCache = new WeakMap<Gear<any, any>, xs<any>>()
+    const modelCache = cacheModel ? new WeakMap<Gear<any, any>, xs<any>>() : null
     return gear => {
-        let state = modelCache.get(gear)
+        let state = cacheModel ? modelCache!.get(gear) : null
         if (!state) {
             const wrappedSources = sourcesWrapper(sources, gear)
             const actions = gear.intent ? gear.intent(wrappedSources) : defaultIntent(wrappedSources)
             state = xs.fromObservable(gear.model ? gear.model(actions) : defaultModel(actions))
                 .replaceError((err: any) => xs.fromObservable(gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions)))
                 .remember()
-            modelCache.set(gear, state)
+            if (cacheModel) {
+                modelCache!.set(gear, state)
+            }
         }
         const views = teeth.reduce((accum, tooth) => {
             let view = state!.filter(toothFilter(tooth, (gear.teeth || {})[tooth])).map(toothView(tooth, (gear.teeth || {})[tooth]))
@@ -139,6 +143,7 @@ function spinGear(sources: any,
 }
 
 export function pedal(transmission: Transmission, {
+    cacheModel = true,
     defaultGear = { intent: () => ({}), model: () => xs.of({}), teeth: {} as GearTeeth<any> },
     defaultFilter = () => true,
     sinkMap = new Map(),
@@ -163,7 +168,7 @@ export function pedal(transmission: Transmission, {
         }
 
         const spin = xs.fromObservable<Gear<any, any>>(gear)
-            .map(spinGear(sources, defaultIntent, defaultModel, defaultCatch, sourcesWrapper, teeth, toothFilter, toothView))
+            .map(spinGear(sources, defaultIntent, defaultModel, defaultCatch, sourcesWrapper, teeth, toothFilter, toothView, cacheModel))
             .startWith(emptyTeeth)
             .remember()
 
@@ -181,6 +186,7 @@ const defaultReduce = (acc: any, [cur, gear]: [any, Gear<any, any>]) => Object.a
 function spinGears(sources: any,
                    defaultIntent: (sources: any) => any,
                    defaultModel: (actions: any) => Observable<any>,
+                   cacheModel: boolean,
                    defaultCatch: (error: any, actions: any) => Observable<any>,
                    teeth: string[],
                    toothFilter: (name: string, tooth: GearTooth<any> | GearView<any>) => (model: any) => boolean,
@@ -198,6 +204,7 @@ function spinGears(sources: any,
                              teeth,
                              toothFilter,
                              toothView,
+                             cacheModel,
                              true,
                              defaultConnector,
                              connectors)
@@ -218,6 +225,7 @@ function spinGears(sources: any,
 }
 
 export function motor(gearbox: Gearbox, {
+    cacheModel = true,
     defaultGear = { intent: () => ({}), model: () => xs.of({}), teeth: {} as GearTeeth<any> },
     defaultFilter = () => true,
     defaultConnector = {},
@@ -247,6 +255,7 @@ export function motor(gearbox: Gearbox, {
             .map(spinGears(sources,
                            defaultIntent,
                            defaultModel,
+                           cacheModel,
                            defaultCatch,
                            teeth,
                            toothFilter,

@@ -26,6 +26,7 @@ export interface ToothConnector<TActions, TModel, TTooth, TAccumulator> {
 export declare type Transmission = ((sources: any) => Observable<Gear<any, any>>) | Observable<Gear<any, any>>;
 export declare type Gearbox = ((sources: any) => Observable<Iterable<Gear<any, any>>>) | Observable<Iterable<Gear<any, any>>>;
 export interface PedalOptions {
+    cacheModel?: boolean;
     defaultGear?: Gear<any, any>;
     defaultFilter?: (model: any) => boolean;
     sinkMap?: Map<string, string>;
@@ -39,5 +40,5 @@ export interface MotorOptions extends PedalOptions {
     defaultConnector?: ToothConnector<any, any, any, any>;
     connectors?: Map<string, ToothConnector<any, any, any, any>>;
 }
-export declare function pedal(transmission: Transmission, {defaultGear, defaultFilter, sinkMap, sourcesWrapper}?: PedalOptions): (sources: any) => {};
-export declare function motor(gearbox: Gearbox, {defaultGear, defaultFilter, defaultConnector, cumulative, sourcesWrapper, connectors, sinkMap}?: MotorOptions): (sources: any) => {};
+export declare function pedal(transmission: Transmission, {cacheModel, defaultGear, defaultFilter, sinkMap, sourcesWrapper}?: PedalOptions): (sources: any) => {};
+export declare function motor(gearbox: Gearbox, {cacheModel, defaultGear, defaultFilter, defaultConnector, cumulative, sourcesWrapper, connectors, sinkMap}?: MotorOptions): (sources: any) => {};
