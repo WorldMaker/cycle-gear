@@ -116,7 +116,12 @@ function spinGear(sources: any,
             const wrappedSources = sourcesWrapper(sources, gear)
             const actions = gear.intent ? gear.intent(wrappedSources) : defaultIntent(wrappedSources)
             state = xs.fromObservable(gear.model ? gear.model(actions) : defaultModel(actions))
-                .replaceError((err: any) => xs.fromObservable(gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions)))
+                .replaceError((err: any) => {
+                    if (cacheModel && modelCache) {
+                        modelCache.delete(gear)
+                    }
+                    return xs.fromObservable(gear.catch ? gear.catch(err, actions) : defaultCatch(err, actions))
+                })
                 .remember()
             if (cacheModel) {
                 modelCache!.set(gear, state)

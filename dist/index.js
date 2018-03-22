@@ -97,7 +97,12 @@ function spinGear(sources, defaultIntent, defaultModel, defaultCatch, sourcesWra
             var wrappedSources = sourcesWrapper(sources, gear);
             var actions_1 = gear.intent ? gear.intent(wrappedSources) : defaultIntent(wrappedSources);
             state = xstream_1.default.fromObservable(gear.model ? gear.model(actions_1) : defaultModel(actions_1))
-                .replaceError(function (err) { return xstream_1.default.fromObservable(gear.catch ? gear.catch(err, actions_1) : defaultCatch(err, actions_1)); })
+                .replaceError(function (err) {
+                if (cacheModel && modelCache) {
+                    modelCache.delete(gear);
+                }
+                return xstream_1.default.fromObservable(gear.catch ? gear.catch(err, actions_1) : defaultCatch(err, actions_1));
+            })
                 .remember();
             if (cacheModel) {
                 modelCache.set(gear, state);
